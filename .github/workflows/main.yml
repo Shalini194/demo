@@ -10,10 +10,6 @@ on:
 
 jobs:
   run_program:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - name: Call Reusable Workflow
-        uses: ./c.yml
-        with:
-          c_file_path: ${{ github.event.inputs.file_path }}
+    uses: ./.github/workflows/c.yml
+    with:
+      c_file_path: ${{ github.event.inputs.file_path }}
