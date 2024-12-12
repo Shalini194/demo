@@ -1,0 +1,25 @@
+name: Main Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      file_path:
+        description: 'Path to the file to run'
+        required: true
+        default: '/user-1/main.c'  
+
+jobs:
+  run_program:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Print the full path of the input file
+        run: echo "Full path of the input file: ${{ github.event.inputs.file_path }}"
+
+      - name: Run C Program
+        if: contains(github.event.inputs.file_path, '.c')
+        uses: ./.github/workflows/c.yml
+        with:
+          c_file_path: ${{ github.event.inputs.file_path }} 

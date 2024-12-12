@@ -1,0 +1,26 @@
+name: Run C Program
+
+on:
+  workflow_call:
+    inputs:
+      c_file_path:
+        description: 'Path to the C file to run'
+        required: true
+
+jobs:
+  run_c_program:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up GCC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: Compile C Program
+        run: gcc ${{ inputs.c_file_path }} -o output_program
+
+      - name: Run C Program
+        run: ./output_program
