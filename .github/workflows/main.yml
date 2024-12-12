@@ -1,15 +1,26 @@
-name: Main Workflow
+name: Build and Run C Code
 
 on:
   workflow_dispatch:
     inputs:
-      file_path:
-        description: 'Path to the file to run'
+      c_file:
+        description: 'Path to the C file to compile and run'
         required: true
-        default: 'user-1/main.c'
+        default: 'user-1/main.c'  
 
 jobs:
-  run_program:
-    uses: ./.github/workflows/c.yml
-    with:
-      c_file_path: ${{ github.event.inputs.file_path }}
+  build:
+    runs-on: ubuntu-latest  
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up GCC
+      run: sudo apt-get install build-essential  
+
+    - name: Compile C code
+      run: gcc -o my_program ${{ github.event.inputs.c_file }}  
+
+    - name: Run the program
+      run: ./my_program  
