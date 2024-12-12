@@ -6,16 +6,14 @@ on:
       file_path:
         description: 'Path to the file to run'
         required: true
-        default: 'user-1/main.c'  
+        default: 'user-1/main.c'
 
 jobs:
   run_program:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
-      - name: Run C Program
-        if: contains(github.event.inputs.file_path, '.c')
-        uses: ./.github/workflows/c.yml
+      - name: Call Reusable Workflow
+        uses: ./c.yml
         with:
-          c_file_path: ${{ github.event.inputs.file_path }} 
+          c_file_path: ${{ github.event.inputs.file_path }}
