@@ -6,8 +6,7 @@ on:
       c_file_path:
         description: 'Path to the C file to run'
         required: true
-  type: workflow
-  
+
 jobs:
   run_c_program:
     runs-on: ubuntu-latest
