@@ -1,7 +1,7 @@
 name: Merge Branch
 
 on:
-  pull_request:
+  pull_request_target:  # Change from pull_request to pull_request_target
     types:
       - opened
       - synchronize
@@ -16,6 +16,8 @@ jobs:
     steps:
     - name: Checkout the repository
       uses: actions/checkout@v3
+      with:
+        ref: main  # Ensure the main branch is checked out
 
     - name: Set up Git
       run: |
@@ -32,14 +34,12 @@ jobs:
         git checkout main
         git merge pr-branch --no-ff --commit --message "Merge PR #${{ github.event.pull_request.number }} from fork"
 
-    - name: Set up authentication
+    - name: Push the merged result to the main branch
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GITHUB_TOKEN to authenticate
       run: |
         git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-
-    - name: Push the merged result to the main branch
-      run: git push origin main
+        git push origin main
 
     - name: Notify on success
       if: success()
