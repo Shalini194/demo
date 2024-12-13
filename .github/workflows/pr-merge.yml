@@ -33,8 +33,10 @@ jobs:
         git merge pr-branch --no-ff --commit --message "Merge PR #${{ github.event.pull_request.number }} from fork"
 
     - name: Set up authentication
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+        git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
 
     - name: Push the merged result to the main branch
       run: git push origin main
