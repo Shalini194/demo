@@ -4,14 +4,16 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   check-main-merge:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GH_TOKEN }} # Ensure GH_TOKEN is set in secrets
 
       - name: Set Git user info
         run: |
