@@ -38,4 +38,3 @@ jobs:
         run: |
           git merge --no-ff pr-branch
           git push origin main
-        if: github.event.pull_request.merged == 'true'
