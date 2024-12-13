@@ -1,0 +1,55 @@
+name: Merge Branch
+
+on:
+  pull_request:
+    types:
+      - synchronize
+      - opened
+      - reopened
+
+jobs:
+  check-main-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check for branch lock
+        run: |
+          if [ -f ".github/lockfile" ]; then
+            echo "Another PR is being merged into the main branch. Please wait for it to finish."
+            exit 1
+          fi
+
+      - name: Create lockfile
+        run: |
+          echo "Locking branch for merge..." > .github/lockfile
+          git add .github/lockfile
+          git commit -m "Lock main branch for PR merge"
+          git push origin HEAD
+
+  merge-pr:
+    needs: check-main-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Ensure PR is up-to-date with main
+        run: |
+          git fetch origin main
+          git checkout ${{ github.event.pull_request.head.ref }}
+          git merge origin/main || (echo "Please rebase your branch onto main." && exit 1)
+
+      - name: Merge PR into main
+        run: |
+          git checkout main
+          git merge ${{ github.event.pull_request.head.ref }}
+          git push origin main
+
+      - name: Remove lockfile
+        run: |
+          rm .github/lockfile
+          git add .github/lockfile
+          git commit -m "Unlock main branch after PR merge"
+          git push origin HEAD
