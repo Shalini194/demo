@@ -2,43 +2,62 @@ name: Merge Branch
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
-
-permissions:
-  contents: write
-  pull-requests: write
+    types:
+      - synchronize
+      - opened
+      - reopened
 
 jobs:
   check-main-merge:
     runs-on: ubuntu-latest
+    
+    permissions:
+      issues: write
+      pull-requests: write
     steps:
-      - name: Checkout Code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set Git user info
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-
-      - name: Get latest main branch
+      - name: Check for branch lock
         run: |
-          git fetch origin ${{ github.base_ref }}
-          git checkout ${{ github.base_ref }}
-          git pull origin ${{ github.base_ref }}
-
-      - name: Check for ongoing merges
-        run: |
-          if git rev-parse --verify MERGE_HEAD >/dev/null 2>&1; then
-            echo "Error: A merge is already in progress. Please wait until the current merge is completed.";
-            exit 1;
+          if [ -f ".github/lockfile" ]; then
+            echo "Another PR is being merged into the main branch. Please wait for it to finish."
+            exit 1
           fi
-
-      - name: Check for merge conflicts
+      - name: Create lockfile
         run: |
-          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
-          git merge --no-commit pr-branch || { echo "Error: Merge conflict detected. Please resolve conflicts before merging."; exit 1; }
+          echo "Locking branch for merge..." > .github/lockfile
+          git add .github/lockfile
+          git commit -m "Lock main branch for PR merge"
+          git push origin HEAD
+  merge-pr:
+    needs: check-main-merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
+      - name: Set Git user info
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+      - name: Ensure PR is up-to-date with main
+        run: |
+          git fetch origin main
+          git checkout ${{ github.event.pull_request.head.ref }}
+          git merge origin/main || (echo "Please rebase your branch onto main." && exit 1)
       - name: Merge PR into main
         run: |
-          git merge --no-ff pr-branch
-          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git ${{ github.base_ref }}
+          git checkout main
+          git merge ${{ github.event.pull_request.head.ref }}
+          git push origin main
+      - name: Remove lockfile
+        run: |
+          rm .github/lockfile
+          git add .github/lockfile
+          git commit -m "Unlock main branch after PR merge"
+          git push origin HEAD
