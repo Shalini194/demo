@@ -24,19 +24,20 @@ jobs:
 
     - name: Fetch pull request and main branch
       run: |
-        # Fetch the pull request branch
         git fetch origin pull/${{ github.event.pull_request.number }}/head:pr-branch
-        # Fetch the main branch
         git fetch origin main
 
     - name: Merge PR into main
       run: |
-        # Checkout main branch
         git checkout main
-        # Merge PR into main
         git merge pr-branch --no-ff --commit --message "Merge PR #${{ github.event.pull_request.number }} from fork"
-        # Push the merged result to the main branch
-        git push origin main
+
+    - name: Set up authentication
+      run: |
+        git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+
+    - name: Push the merged result to the main branch
+      run: git push origin main
 
     - name: Notify on success
       if: success()
