@@ -37,4 +37,4 @@ jobs:
       - name: Merge PR into main
         run: |
           git merge --no-ff pr-branch
-          git push origin main
+          git push https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/Shalini194/demo.git main
