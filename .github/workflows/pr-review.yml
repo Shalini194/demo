@@ -1,0 +1,42 @@
+name: Merge PR on Approval
+
+on:
+  pull_request_review:
+    types: [submitted]  # Runs the workflow whenever a review is submitted
+
+jobs:
+  merge_on_approval:
+    runs-on: ubuntu-latest
+
+    if: ${{ github.event.review.state == 'approved' }}  # Run only when the review is 'approved'
+
+    steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v3
+
+    - name: Merge PR
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const prNumber = context.payload.pull_request.number;
+
+          // Check if the PR has the required approval
+          const reviews = await github.rest.pulls.listReviews({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: prNumber,
+          });
+
+          const approvals = reviews.data.filter(review => review.state === 'APPROVED');
+          
+          if (approvals.length > 0) {
+            await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              merge_method: 'merge' 
+            });
+            console.log(`PR #${prNumber} was successfully merged.`);
+          } else {
+            console.log(`PR #${prNumber} does not have any approvals.`);
+          }
