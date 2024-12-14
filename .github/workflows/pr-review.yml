@@ -2,41 +2,42 @@ name: Merge PR on Approval
 
 on:
   pull_request_review:
-    types: [submitted]  # Runs the workflow whenever a review is submitted
+    types: [submitted]  
 
 jobs:
   merge_on_approval:
     runs-on: ubuntu-latest
 
-    if: ${{ github.event.review.state == 'approved' }}  # Run only when the review is 'approved'
+    if: ${{ github.event.review.state == 'approved' }}  
 
     steps:
     - name: Checkout the repository
       uses: actions/checkout@v3
-
-    - name: Merge PR
-      uses: actions/github-script@v6
       with:
-        script: |
-          const prNumber = context.payload.pull_request.number;
+        fetch-depth: 0 
 
-          // Check if the PR has the required approval
-          const reviews = await github.rest.pulls.listReviews({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: prNumber,
-          });
+    - name: Set up Git user
+      run: |
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
 
-          const approvals = reviews.data.filter(review => review.state === 'APPROVED');
-          
-          if (approvals.length > 0) {
-            await github.rest.pulls.merge({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber,
-              merge_method: 'merge' 
-            });
-            console.log(`PR #${prNumber} was successfully merged.`);
-          } else {
-            console.log(`PR #${prNumber} does not have any approvals.`);
-          }
+    - name: Fetch and merge the PR
+      run: |
+        PR_BRANCH="pr-${{ github.event.pull_request.number }}"
+        BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+
+        # Checkout and track the PR branch
+        git fetch origin pull/${{ github.event.pull_request.number }}/head:${PR_BRANCH}
+        git checkout $PR_BRANCH
+
+        # Checkout the base branch
+        git checkout $BASE_BRANCH
+
+        # Merge the PR branch into the base branch
+        git merge --no-ff $PR_BRANCH -m "Merging PR #${{ github.event.pull_request.number }}"
+
+    - name: Push merged changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git push origin $BASE_BRANCH
